@@ -2,10 +2,12 @@
 #define SYSTEM_PARSER_H
 
 #include <fstream>
+#include <map>
 #include <regex>
 #include <string>
 
 namespace LinuxParser {
+using ReplacementVector = std::vector<std::pair<const char, const char>>;
 // Paths
 const std::string kProcDirectory{"/proc/"};
 const std::string kCmdlineFilename{"/cmdline"};
@@ -52,6 +54,15 @@ std::string Ram(int pid);
 std::string Uid(int pid);
 std::string User(int pid);
 long int UpTime(int pid);
+
+// Utils
+std::string GetLineElementAtIndex(const std::string line, const int n);
+std::map<int, std::string> GetLineElementsAtIndexes(
+    const std::string line, const std::vector<int> indexes,
+    const int skip_first);
+std::string FindKeyInFile(const std::string path, std::string key,
+                          ReplacementVector replace_symbols,
+                          ReplacementVector replace_back);
 };  // namespace LinuxParser
 
 #endif
