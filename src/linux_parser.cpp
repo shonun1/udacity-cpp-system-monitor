@@ -231,7 +231,9 @@ long LinuxParser::UpTime(int pid) {
   if (stream.is_open()) {
     std::getline(stream, line);
     const int proc_uptime_pos = 21;
-    return std::stol(LinuxParser::GetLineElementAtIndex(line, proc_uptime_pos));
+    return std::stol(
+               LinuxParser::GetLineElementAtIndex(line, proc_uptime_pos)) /
+           sysconf(_SC_CLK_TCK);
   }
 
   return 0L;
