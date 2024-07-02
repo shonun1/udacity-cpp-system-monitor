@@ -45,11 +45,11 @@ int System::TotalProcesses() { return LinuxParser::TotalProcesses(); }
 long int System::UpTime() { return LinuxParser::UpTime(); }
 
 void System::refreshProcesses() {
+  const vector<int>& pids = LinuxParser::Pids();
   this->processes_ = {};
 
-  for (auto pid : LinuxParser::Pids()) {
-    Process process{pid};
-    this->processes_.push_back(process);
+  for (const int& pid : pids) {
+    this->processes_.emplace_back(pid);
   }
 
   std::sort(this->processes_.rbegin(), this->processes_.rend());

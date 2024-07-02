@@ -20,6 +20,7 @@ class Process {
   // TODO: Declare any necessary private members
  private:
   int pid_;
+  static const int command_max_len{40};
 };
 
 #endif

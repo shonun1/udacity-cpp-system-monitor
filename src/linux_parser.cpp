@@ -11,6 +11,7 @@
 
 using std::map;
 using std::stof;
+using std::stol;
 using std::string;
 using std::to_string;
 using std::vector;
@@ -65,9 +66,8 @@ vector<int> LinuxParser::Pids() {
 // TODO: Read and return the system memory utilization
 float LinuxParser::MemoryUtilization() {
   const string mem_path = kProcDirectory + kMeminfoFilename;
-  string total_key{"MemTotal"}, free_key{"MemFree"};
+  string total_key{"MemTotal:"}, free_key{"MemFree:"};
   ReplacementVector replacements, replace_back;
-  replacements.push_back(std::make_pair(':', ' '));
   float mem_total = stof(LinuxParser::FindKeyInFile(
       mem_path, total_key, replacements, replace_back));
   float mem_free = stof(LinuxParser::FindKeyInFile(mem_path, free_key,
@@ -110,7 +110,7 @@ long LinuxParser::ActiveJiffies(int pid) {
   }
   long jiff_sum{0};
   for (auto pair : jiffies) {
-    jiff_sum += std::stol(pair.second);
+    jiff_sum += stol(pair.second);
   }
 
   return jiff_sum / sysconf(_SC_CLK_TCK);
@@ -189,8 +189,9 @@ string LinuxParser::Command(int pid) {
 // REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Ram(int pid) {
   const string path = kProcDirectory + to_string(pid) + kStatusFilename;
-  ReplacementVector replacements{std::make_pair(':', ' ')}, replace_back;
-  string mem{"VmSize"};
+  ReplacementVector replacements, replace_back;
+  // Using VmRSS over VmSize to display purely the physical memory usage
+  string mem{"VmRSS:"};
   return LinuxParser::FindKeyInFile(path, mem, replacements, replace_back);
 }
 
@@ -227,16 +228,20 @@ string LinuxParser::User(int pid) {
 // REMOVE: [[maybe_unused]] once you define the function
 long LinuxParser::UpTime(int pid) {
   string line;
+  long start_time;
   std::ifstream stream(kProcDirectory + to_string(pid) + kStatFilename);
   if (stream.is_open()) {
     std::getline(stream, line);
-    const int proc_uptime_pos = 21;
-    return std::stol(
-               LinuxParser::GetLineElementAtIndex(line, proc_uptime_pos)) /
-           sysconf(_SC_CLK_TCK);
+    const int proc_start_time_pos = 21;
+    start_time =
+        stol(LinuxParser::GetLineElementAtIndex(line, proc_start_time_pos));
   }
 
-  return 0L;
+  // The value was returned in jiffies before linux version 2.6
+  if (stof(LinuxParser::Kernel()) < 2.6f)
+    return LinuxParser::UpTime() - start_time;
+
+  return LinuxParser::UpTime() - start_time / sysconf(_SC_CLK_TCK);
 }
 
 string LinuxParser::GetLineElementAtIndex(const string line, const int n) {
